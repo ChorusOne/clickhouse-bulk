@@ -22,8 +22,13 @@ func TestRunServer(t *testing.T) {
 	server := InitServer("", collector, false)
 	go server.Start()
 	server.echo.POST("/", server.writeHandler)
+	server.echo.POST("/:dbname", server.writeHandler)
 
 	status, resp := request("POST", "/", "", server.echo)
+	assert.Equal(t, status, http.StatusOK)
+	assert.Equal(t, resp, "")
+
+	status, resp = request("POST", "/default", "", server.echo)
 	assert.Equal(t, status, http.StatusOK)
 	assert.Equal(t, resp, "")
 
@@ -31,7 +36,7 @@ func TestRunServer(t *testing.T) {
 	assert.Equal(t, status, http.StatusOK)
 	assert.Equal(t, resp, "")
 
-	status, resp = request("POST", "/?query="+escTitle, qContent, server.echo)
+	status, resp = request("POST", "/test?query="+escTitle, qContent, server.echo)
 	assert.Equal(t, status, http.StatusOK)
 	assert.Equal(t, resp, "")
 
@@ -39,7 +44,7 @@ func TestRunServer(t *testing.T) {
 	assert.Equal(t, status, http.StatusOK)
 	assert.Equal(t, resp, "")
 
-	status, resp = authRequest("POST", "default", "", "/", "", server.echo)
+	status, resp = authRequest("POST", "default", "", "/another_database", "", server.echo)
 	assert.Equal(t, status, http.StatusOK)
 	assert.Equal(t, resp, "")
 

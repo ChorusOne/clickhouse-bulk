@@ -38,6 +38,10 @@ func NewServer(listen string, collector *Collector, debug bool) *Server {
 func (server *Server) writeHandler(c echo.Context) error {
 	q, _ := ioutil.ReadAll(c.Request().Body)
 	s := string(q)
+	dbname := c.Param("dbname")
+	if dbname == "" {
+		dbname = "default"
+	}
 
 	if server.Debug {
 		log.Printf("DEBUG: query %+v %+v\n", c.QueryString(), s)
@@ -47,9 +51,9 @@ func (server *Server) writeHandler(c echo.Context) error {
 	user, password, ok := c.Request().BasicAuth()
 	if ok {
 		if qs == "" {
-			qs = "user=" + user + "&password=" + password
+			qs = "database=" + dbname + "&user=" + user + "&password=" + password
 		} else {
-			qs = "user=" + user + "&password=" + password + "&" + qs
+			qs = "database=" + dbname + "&user=" + user + "&password=" + password + "&" + qs
 		}
 	}
 	params, content, insert := server.Collector.ParseQuery(qs, s)
@@ -78,7 +82,7 @@ func (server *Server) Shutdown(ctx context.Context) error {
 // InitServer - run server
 func InitServer(listen string, collector *Collector, debug bool) *Server {
 	server := NewServer(listen, collector, debug)
-	server.echo.POST("/", server.writeHandler)
+	server.echo.POST("/:dbname", server.writeHandler)
 	server.echo.GET("/status", server.statusHandler)
 	server.echo.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
